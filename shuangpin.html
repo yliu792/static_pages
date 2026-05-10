@@ -51,6 +51,10 @@
         background: #fef3c7;
         border-color: #f59e0b;
       }
+      .key.init-zero {
+        background: #f5f3ff;
+        border-color: #8b5cf6;
+      }
       .key.pressed {
         background: #0f766e;
         border-color: #0f766e;
@@ -263,17 +267,17 @@
         <div class="kb-row" data-row="0">
           <div class="key" data-key="q"><span class="letter">Q</span><span class="pinyin">iu</span></div>
           <div class="key" data-key="w"><span class="letter">W</span><span class="pinyin">ua / ia</span></div>
-          <div class="key" data-key="e"><span class="letter">E</span><span class="pinyin">e</span></div>
+          <div class="key init-zero" data-key="e"><span class="letter">E</span><span class="pinyin"><small>声: 零</small><br />韵: e</span></div>
           <div class="key" data-key="r"><span class="letter">R</span><span class="pinyin">uan / er</span></div>
           <div class="key" data-key="t"><span class="letter">T</span><span class="pinyin">ue</span></div>
           <div class="key" data-key="y"><span class="letter">Y</span><span class="pinyin">uai / ü</span></div>
           <div class="key init-special" data-key="u"><span class="letter">U</span><span class="pinyin"><small>声: sh</small><br />韵: u</span></div>
           <div class="key init-special" data-key="i"><span class="letter">I</span><span class="pinyin"><small>声: ch</small><br />韵: i</span></div>
-          <div class="key" data-key="o"><span class="letter">O</span><span class="pinyin">uo / o</span></div>
+          <div class="key init-zero" data-key="o"><span class="letter">O</span><span class="pinyin"><small>声: 零</small><br />韵: uo / o</span></div>
           <div class="key" data-key="p"><span class="letter">P</span><span class="pinyin">un</span></div>
         </div>
         <div class="kb-row" data-row="1">
-          <div class="key" data-key="a"><span class="letter">A</span><span class="pinyin">a</span></div>
+          <div class="key init-zero" data-key="a"><span class="letter">A</span><span class="pinyin"><small>声: 零</small><br />韵: a</span></div>
           <div class="key" data-key="s"><span class="letter">S</span><span class="pinyin">ong / iong</span></div>
           <div class="key" data-key="d"><span class="letter">D</span><span class="pinyin">uang / iang</span></div>
           <div class="key" data-key="f"><span class="letter">F</span><span class="pinyin">en</span></div>
@@ -434,12 +438,40 @@
           const resp = await fetch(url);
           const data = await resp.json();
           if (data[0] === "SUCCESS" && data[1] && data[1][0]) {
-            return data[1][0];
+            return normalizeCandidates(data[1][0]);
           }
           return [];
         } catch (e) {
           return null;
         }
+      }
+
+      function normalizeCandidates(entry) {
+        if (Array.isArray(entry)) {
+          const candidates = Array.isArray(entry[1]) ? entry[1] : entry;
+          return candidates
+            .map(normalizeCandidate)
+            .filter(Boolean);
+        }
+        return normalizeCandidate(entry) ? [normalizeCandidate(entry)] : [];
+      }
+
+      function normalizeCandidate(candidate) {
+        if (typeof candidate === "string") return candidate;
+        if (Array.isArray(candidate)) return normalizeCandidate(candidate[0]);
+        if (candidate && typeof candidate === "object") {
+          return candidate.candidate || candidate.word || candidate.text || candidate[0] || "";
+        }
+        return "";
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
       }
 
       // ====== DOM ======
@@ -493,12 +525,20 @@
           const charSpans = chars
             .map(
               (c) =>
-                `<span onclick="this.style.background='var(--accent)';this.style.color='#fff';navigator.clipboard?.writeText('${c}')" title="点击复制">${c}</span>`
+                `<span data-char="${escapeHtml(c)}" title="点击复制">${escapeHtml(c)}</span>`
             )
             .join("");
           resultEl.innerHTML = `${keySeq} ${detail} <span class="arrow">→</span> <div class="chars">${charSpans}</div>`;
         }
       }
+
+      resultEl.addEventListener("click", (e) => {
+        const target = e.target.closest("[data-char]");
+        if (!target) return;
+        target.style.background = "var(--accent)";
+        target.style.color = "#fff";
+        navigator.clipboard?.writeText(target.dataset.char);
+      });
 
       input.addEventListener("keydown", (e) => {
         // Allow IME composition to pass through
@@ -615,8 +655,9 @@
           ["NL", "nai", "奶"],
           ["M;", "ming", "名"],
           ["YT", "yue", "月"],
-          ["WQ", "wiu", "??"],
-          ["PR", "pun", "??"],
+          ["AA", "a", "啊"],
+          ["EE", "e", "饿"],
+          ["OR", "er", "二"],
           ["DJ", "dan", "单"],
           ["FH", "fang", "方"],
           ["GG", "geng", "更"],
