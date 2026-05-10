@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>终端冷知识 · Fun Facts</title>
+    <style>
+      :root {
+        --bg1: #f6efe5;
+        --bg2: #d7e7f4;
+        --text: #1f2937;
+        --card: #ffffff;
+        --accent: #0f766e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
+        color: var(--text);
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(circle at 10% 20%, var(--bg1), transparent 45%),
+          radial-gradient(circle at 90% 80%, var(--bg2), transparent 45%),
+          #f8fafc;
+      }
+
+      .card {
+        width: min(92vw, 760px);
+        background: var(--card);
+        border-radius: 24px;
+        padding: 2rem;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+      }
+
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: clamp(1.6rem, 3vw, 2.2rem);
+      }
+
+      p {
+        margin: 0.3rem 0;
+        line-height: 1.7;
+      }
+
+      .facts {
+        margin-top: 1.3rem;
+        display: grid;
+        gap: 0.9rem;
+      }
+
+      .fact {
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 0.9rem 1rem;
+        background: #fcfefe;
+      }
+
+      .tag {
+        display: inline-block;
+        font-family: "SF Mono", "Fira Code", "JetBrains Mono", monospace;
+        font-size: 0.85rem;
+        border-radius: 999px;
+        padding: 0.15rem 0.5rem;
+        background: #e8f7f5;
+        color: #0f766e;
+        margin-bottom: 0.45rem;
+      }
+
+      .fact h2 {
+        margin: 0 0 0.35rem;
+        font-size: 1.08rem;
+      }
+
+      .fact p {
+        margin: 0;
+        color: #475569;
+      }
+
+      .nav {
+        margin-top: 1.5rem;
+        text-align: center;
+      }
+
+      .nav a {
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .nav a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1>终端冷知识</h1>
+      <p>写给“刚入门但很好奇”的你：命令背后常有有趣的小历史。</p>
+
+      <section class="facts">
+        <article class="fact">
+          <div class="tag">zsh</div>
+          <h2>“z” 是什么？</h2>
+          <p>
+            `zsh` 的名字常见解释是来自早期作者名字中的字母 “z”，并不是
+            “最后一个 shell” 的官方含义。把它理解成一个“更现代、可定制”的 shell 更准确。
+          </p>
+        </article>
+
+        <article class="fact">
+          <div class="tag">cat</div>
+          <h2>为什么用“猫”来看文件？</h2>
+          <p>
+            `cat` 是 `concatenate`（拼接）的缩写，本来主要用途是“把多个文件连起来输出”。
+            因为“顺便能显示文件内容”，大家就经常拿它当“看文件”的命令。
+          </p>
+        </article>
+
+        <article class="fact">
+          <div class="tag">pwd</div>
+          <h2>不是 password</h2>
+          <p>`pwd` 的意思是 `print working directory`，就是“显示你现在所在目录”。</p>
+        </article>
+
+        <article class="fact">
+          <div class="tag">grep</div>
+          <h2>名字像乱码，其实很古老</h2>
+          <p>
+            `grep` 来自早期编辑器命令 `g/re/p`，大意是“全局查找并打印匹配行”。
+            现在它成了搜索文本的代名词。
+          </p>
+        </article>
+      </section>
+
+      <div class="nav">
+        <a href="index.html">&larr; 返回首页</a>
+        <span> · </span>
+        <a href="tips.html">终端小技巧</a>
+      </div>
+    </main>
+  </body>
+</html>
