@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>微软双拼键盘图 · 微软双拼方案</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .keyboard {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        margin: 1.5rem 0;
+        user-select: none;
+      }
+      .kb-row {
+        display: flex;
+        gap: 5px;
+      }
+      .key {
+        width: clamp(36px, 8vw, 56px);
+        height: clamp(48px, 10vw, 66px);
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        cursor: default;
+        transition: background 0.15s, border-color 0.15s;
+      }
+      .key .letter {
+        font-size: clamp(1rem, 3vw, 1.25rem);
+        color: #0f172a;
+        line-height: 1.2;
+      }
+      .key .pinyin {
+        font-size: clamp(0.55rem, 1.6vw, 0.72rem);
+        color: #0f766e;
+        line-height: 1.2;
+        margin-top: 1px;
+        text-align: center;
+      }
+      .key .pinyin small {
+        color: #94a3b8;
+      }
+      .key.init-special {
+        background: #fef3c7;
+        border-color: #f59e0b;
+      }
+      .key.pressed {
+        background: #0f766e;
+        border-color: #0f766e;
+      }
+      .key.pressed .letter,
+      .key.pressed .pinyin,
+      .key.pressed .pinyin small {
+        color: #fff;
+      }
+
+      .legend {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        margin: 0.5rem 0 1rem;
+        font-size: 0.82rem;
+        color: #64748b;
+        justify-content: center;
+      }
+      .legend span {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+      .legend .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+      .legend .dot.special {
+        background: #f59e0b;
+      }
+      .legend .dot.zero {
+        background: #8b5cf6;
+      }
+
+      .input-area {
+        margin-top: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .input-area label {
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .input-area label .badge {
+        background: var(--accent);
+        color: #fff;
+        font-size: 0.7rem;
+        padding: 0.1rem 0.45rem;
+        border-radius: 999px;
+        font-weight: 500;
+      }
+      .input-area input {
+        padding: 0.65rem 0.9rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-family: "SF Mono", "Fira Code", "JetBrains Mono", monospace;
+        background: #f8fafc;
+        transition: border-color 0.2s;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .input-area input:focus {
+        outline: none;
+        border-color: var(--accent);
+        background: #fff;
+      }
+      .input-area .try-input {
+        position: relative;
+      }
+      .try-input input {
+        padding-right: 6rem;
+      }
+      .google-btn {
+        position: absolute;
+        right: 4px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.3rem 0.6rem;
+        font-size: 0.72rem;
+        cursor: pointer;
+        color: #64748b;
+        white-space: nowrap;
+        transition: all 0.2s;
+      }
+      .google-btn:hover {
+        background: #e8f7f5;
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+
+      .result {
+        margin-top: 0.6rem;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 12px;
+        padding: 0.8rem 1rem;
+        min-height: 2.8rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+      }
+      .result .pinyin-out {
+        font-family: "SF Mono", "Fira Code", "JetBrains Mono", monospace;
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .result .arrow {
+        color: #94a3b8;
+      }
+      .result .chars {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .result .chars span {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.2rem 0.5rem;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .result .chars span:hover {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+      .result .hint {
+        color: #94a3b8;
+        font-size: 0.8rem;
+      }
+      .result .loading {
+        color: #f59e0b;
+        font-size: 0.8rem;
+      }
+      .result .error-msg {
+        color: #ef4444;
+        font-size: 0.8rem;
+      }
+
+      .buffer {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-top: 0.3rem;
+        font-size: 0.85rem;
+        color: #64748b;
+        min-height: 1.5em;
+      }
+      .buffer .buf-char {
+        background: #e0e7ff;
+        color: #3730a3;
+        border-radius: 6px;
+        padding: 0.1rem 0.4rem;
+        font-family: "SF Mono", "Fira Code", monospace;
+        font-weight: 600;
+      }
+      .buffer .buf-char.active {
+        background: #c7d2fe;
+      }
+
+      .sample-list {
+        margin-top: 1.2rem;
+        font-size: 0.85rem;
+        color: #64748b;
+        columns: 2;
+        column-gap: 2rem;
+      }
+      .sample-list div {
+        padding: 0.2rem 0;
+      }
+      .sample-list code {
+        background: #f1f5f9;
+        padding: 0.1rem 0.35rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: #0f172a;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1>微软双拼键盘图</h1>
+      <p>
+        微软双拼（Microsoft Double
+        Pinyin）是一种双键输入方案：<strong>声母</strong> + <strong>韵母</strong> 各按一次键，一个汉字只需两键。
+      </p>
+
+      <!-- Keyboard -->
+      <div class="legend">
+        <span><span class="dot special"></span> 特殊声母 (zh/ch/sh)</span>
+        <span><span class="dot zero"></span> 零声母引导键 (a/e/o)</span>
+        <span>上方: 按键 · 下方: 韵母</span>
+      </div>
+
+      <div class="keyboard" id="keyboard">
+        <div class="kb-row" data-row="0">
+          <div class="key" data-key="q"><span class="letter">Q</span><span class="pinyin">iu</span></div>
+          <div class="key" data-key="w"><span class="letter">W</span><span class="pinyin">ua / ia</span></div>
+          <div class="key" data-key="e"><span class="letter">E</span><span class="pinyin">e</span></div>
+          <div class="key" data-key="r"><span class="letter">R</span><span class="pinyin">uan / er</span></div>
+          <div class="key" data-key="t"><span class="letter">T</span><span class="pinyin">ue</span></div>
+          <div class="key" data-key="y"><span class="letter">Y</span><span class="pinyin">uai / ü</span></div>
+          <div class="key init-special" data-key="u"><span class="letter">U</span><span class="pinyin"><small>声: sh</small><br />韵: u</span></div>
+          <div class="key init-special" data-key="i"><span class="letter">I</span><span class="pinyin"><small>声: ch</small><br />韵: i</span></div>
+          <div class="key" data-key="o"><span class="letter">O</span><span class="pinyin">uo / o</span></div>
+          <div class="key" data-key="p"><span class="letter">P</span><span class="pinyin">un</span></div>
+        </div>
+        <div class="kb-row" data-row="1">
+          <div class="key" data-key="a"><span class="letter">A</span><span class="pinyin">a</span></div>
+          <div class="key" data-key="s"><span class="letter">S</span><span class="pinyin">ong / iong</span></div>
+          <div class="key" data-key="d"><span class="letter">D</span><span class="pinyin">uang / iang</span></div>
+          <div class="key" data-key="f"><span class="letter">F</span><span class="pinyin">en</span></div>
+          <div class="key" data-key="g"><span class="letter">G</span><span class="pinyin">eng</span></div>
+          <div class="key" data-key="h"><span class="letter">H</span><span class="pinyin">ang</span></div>
+          <div class="key" data-key="j"><span class="letter">J</span><span class="pinyin">an</span></div>
+          <div class="key" data-key="k"><span class="letter">K</span><span class="pinyin">ao</span></div>
+          <div class="key" data-key="l"><span class="letter">L</span><span class="pinyin">ai</span></div>
+          <div class="key" data-key=";"><span class="letter">;</span><span class="pinyin">ing</span></div>
+        </div>
+        <div class="kb-row" data-row="2">
+          <div class="key" data-key="z"><span class="letter">Z</span><span class="pinyin">ei</span></div>
+          <div class="key" data-key="x"><span class="letter">X</span><span class="pinyin">ie</span></div>
+          <div class="key" data-key="c"><span class="letter">C</span><span class="pinyin">iao</span></div>
+          <div class="key init-special" data-key="v"><span class="letter">V</span><span class="pinyin"><small>声: zh</small><br />韵: ui / ü</span></div>
+          <div class="key" data-key="b"><span class="letter">B</span><span class="pinyin">ou</span></div>
+          <div class="key" data-key="n"><span class="letter">N</span><span class="pinyin">in</span></div>
+          <div class="key" data-key="m"><span class="letter">M</span><span class="pinyin">ian</span></div>
+        </div>
+      </div>
+
+      <!-- Live testing -->
+      <div class="input-area">
+        <div>
+          <label>
+            双拼输入<span class="badge">现场试验</span>
+          </label>
+          <div class="try-input">
+            <input
+              type="text"
+              id="spInput"
+              placeholder="在键盘上打字试试，比如 vs=中, go=国, rf=人..."
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
+            />
+            <button class="google-btn" id="googleBtn" title="用 Google Input Tools 在此处输入拼音">Google IME</button>
+          </div>
+        </div>
+        <div class="buffer" id="buffer"></div>
+        <div class="result" id="result">
+          <span class="hint">在上面输入双拼按键，这里会显示对应的拼音和候选汉字。</span>
+        </div>
+      </div>
+
+      <!-- Sample mapping -->
+      <details style="margin-top:1.2rem;font-size:0.88rem;">
+        <summary style="cursor:pointer;color:var(--accent);font-weight:600;">常见音节对照表</summary>
+        <div class="sample-list" id="sampleList"></div>
+      </details>
+
+      <div class="nav">
+        <a href="index.html">&larr; 返回首页</a>
+      </div>
+    </main>
+
+    <!-- Google Input Tools -->
+    <script src="https://www.gstatic.com/inputtools/js/"></script>
+    <script>
+      // ====== Double Pinyin Mappings ======
+
+      // Initials (first keystroke)
+      const initials = {};
+      // Regular consonants map to themselves
+      "bpmfdtnlgkhjqxrzcsyw".split("").forEach(c => (initials[c] = c));
+      // Special initials
+      initials["v"] = "zh";
+      initials["i"] = "ch";
+      initials["u"] = "sh";
+      // Zero-initial pseudo-initials (contribute no consonant sound)
+      initials["a"] = "";
+      initials["e"] = "";
+      initials["o"] = "";
+
+      // Finals (second keystroke) — some depend on initial context
+      function getFinal(key, initial) {
+        // Returns possible finals; first is default
+        const table = {
+          q: ["iu"],
+          w: ["ua", "ia"],
+          e: ["e"],
+          r: ["uan", "er"],
+          t: ["ue"],
+          y: ["uai", "v"],
+          o: ["uo", "o"],
+          p: ["un"],
+          a: ["a"],
+          s: ["ong", "iong"],
+          d: ["uang", "iang"],
+          f: ["en"],
+          g: ["eng"],
+          h: ["ang"],
+          j: ["an"],
+          k: ["ao"],
+          l: ["ai"],
+          ";": ["ing"],
+          z: ["ei"],
+          x: ["ie"],
+          c: ["iao"],
+          v: ["ui", "v"],
+          b: ["ou"],
+          n: ["in"],
+          m: ["ian"],
+          u: ["u"],
+          i: ["i"],
+        };
+        const options = table[key] || [key];
+
+        // Pick the correct variant based on initial
+        if (options.length === 1) return options[0];
+
+        // Context-dependent final selection
+        const first = options[0];
+        const second = options[1] || first;
+
+        switch (key) {
+          case "w":
+            // ia after j/q/x; ua otherwise
+            return initial && "jqx".includes(initial[0]) ? second : first;
+          case "r":
+            // er after zero-initial; uan otherwise
+            return initial === "" ? second : first;
+          case "y":
+            // v after j/q/x/y; uai otherwise
+            return initial && "jqxy".includes(initial[0]) ? second : first;
+          case "o":
+            // o after zero-initial; uo otherwise
+            return initial === "" ? second : first;
+          case "s":
+            // iong after j/q/x; ong otherwise
+            return initial && "jqx".includes(initial[0]) ? second : first;
+          case "d":
+            // iang after j/q/x; uang otherwise
+            return initial && "jqx".includes(initial[0]) ? second : first;
+          case "v":
+            // v after j/q/x/y; ui otherwise
+            return initial && "jqxy".includes(initial[0]) ? second : first;
+          default:
+            return first;
+        }
+      }
+
+      function convertPair(k1, k2) {
+        const init = initials[k1] !== undefined ? initials[k1] : k1;
+        const fin = getFinal(k2, init);
+        if (init === "" && fin === fin) return fin; // zero-initial
+        return init + fin;
+      }
+
+      // ====== Google Input Tools Character Lookup ======
+      async function lookupChars(pinyin) {
+        const url =
+          "https://inputtools.google.com/request?text=" +
+          encodeURIComponent(pinyin) +
+          "&itc=zh-t-i0-pinyin&num=8&cp=0&cs=1&ie=utf-8&oe=utf-8";
+        try {
+          const resp = await fetch(url);
+          const data = await resp.json();
+          if (data[0] === "SUCCESS" && data[1] && data[1][0]) {
+            return data[1][0];
+          }
+          return [];
+        } catch (e) {
+          return null;
+        }
+      }
+
+      // ====== DOM ======
+      const input = document.getElementById("spInput");
+      const bufferEl = document.getElementById("buffer");
+      const resultEl = document.getElementById("result");
+      const googleBtn = document.getElementById("googleBtn");
+      let keystrokeBuffer = []; // up to 2 keys
+
+      function highlightKey(key) {
+        const el = document.querySelector(`.key[data-key="${key}"]`);
+        if (!el) return;
+        el.classList.add("pressed");
+        setTimeout(() => el.classList.remove("pressed"), 200);
+      }
+
+      function updateBuffer() {
+        if (keystrokeBuffer.length === 0) {
+          bufferEl.innerHTML = "";
+          return;
+        }
+        bufferEl.innerHTML = keystrokeBuffer
+          .map((k, i) => {
+            const cls = i === keystrokeBuffer.length - 1 ? "buf-char active" : "buf-char";
+            return `<span class="${cls}">${k}</span>`;
+          })
+          .join("");
+      }
+
+      function getInitialDisplay(k) {
+        const map = { v: "zh", i: "ch", u: "sh", a: "零", e: "零", o: "零" };
+        return map[k] || k;
+      }
+
+      async function showResult(k1, k2) {
+        const pinyin = convertPair(k1, k2);
+        const init = initials[k1] !== undefined ? initials[k1] : k1;
+        const fin = getFinal(k2, init);
+        const initLabel = init === "" ? "零声母" : init;
+        const keySeq = `<span class="pinyin-out">${k1}${k2}</span> → <span class="pinyin-out">${pinyin}</span>`;
+        const detail = `<span style="color:#94a3b8;font-size:0.8rem;">(声: ${initLabel} 韵: ${fin})</span>`;
+
+        resultEl.innerHTML = `${keySeq} ${detail} <span class="arrow">→</span> <span class="loading">查找汉字…</span>`;
+
+        const chars = await lookupChars(pinyin);
+        if (chars === null) {
+          resultEl.innerHTML = `${keySeq} ${detail} <span class="arrow">→</span> <span class="error-msg">Google Input Tools 请求失败（可能是网络原因）</span>`;
+        } else if (chars.length === 0) {
+          resultEl.innerHTML = `${keySeq} ${detail} <span class="arrow">→</span> <span class="hint">没有找到对应汉字，可能不是有效音节</span>`;
+        } else {
+          const charSpans = chars
+            .map(
+              (c) =>
+                `<span onclick="this.style.background='var(--accent)';this.style.color='#fff';navigator.clipboard?.writeText('${c}')" title="点击复制">${c}</span>`
+            )
+            .join("");
+          resultEl.innerHTML = `${keySeq} ${detail} <span class="arrow">→</span> <div class="chars">${charSpans}</div>`;
+        }
+      }
+
+      input.addEventListener("keydown", (e) => {
+        // Allow IME composition to pass through
+        if (e.isComposing || e.keyCode === 229) return;
+
+        const key = e.key.toLowerCase();
+        // Only process letter keys and semicolon
+        if (!/^[a-z;]$/.test(key)) return;
+
+        e.preventDefault();
+
+        highlightKey(key);
+
+        if (keystrokeBuffer.length < 1) {
+          // First keystroke — must be a valid initial
+          if (!(key in initials)) {
+            // Invalid first key
+            return;
+          }
+          keystrokeBuffer = [key];
+          updateBuffer();
+          // Update input value to show what user typed
+          input.value = key;
+        } else {
+          // Second keystroke
+          const k1 = keystrokeBuffer[0];
+          const k2 = key;
+          keystrokeBuffer = [k1, k2];
+          updateBuffer();
+          input.value = k1 + k2;
+          showResult(k1, k2);
+          // Auto-clear buffer after showing result
+          setTimeout(() => {
+            keystrokeBuffer = [];
+            input.value = "";
+            updateBuffer();
+          }, 800);
+        }
+      });
+
+      // Also handle the case where user wants to start a new pair
+      input.addEventListener("input", (e) => {
+        // If input was cleared externally or by IME, reset buffer
+        if (input.value === "") {
+          keystrokeBuffer = [];
+          updateBuffer();
+        }
+      });
+
+      // ====== Google Input Tools IME integration ======
+      let googleIMEActive = false;
+      let googleIME = null;
+
+      googleBtn.addEventListener("click", () => {
+        if (googleIMEActive) {
+          // Deactivate
+          googleIMEActive = false;
+          googleBtn.textContent = "Google IME";
+          googleBtn.style.background = "";
+          googleBtn.style.color = "";
+          if (googleIME) {
+            try {
+              googleIME.deactivate();
+            } catch (e) {}
+          }
+          input.placeholder = "在键盘上打字试试，比如 vs=中, go=国, rf=人...";
+          return;
+        }
+
+        if (!window.google || !google.elements || !google.elements.keyboard) {
+          alert("Google Input Tools 加载失败，请检查网络连接。");
+          return;
+        }
+
+        google.elements.keyboard.load(
+          {
+            layoutCode: "zh-CN",
+          },
+          function (kb) {
+            googleIME = kb;
+            googleIMEActive = true;
+            googleBtn.textContent = "关闭 IME";
+            googleBtn.style.background = "#e8f7f5";
+            googleBtn.style.color = "var(--accent)";
+            input.placeholder = "用拼音输入中文…（比如 nihao → 你好）";
+            input.focus();
+
+            // Allow normal keydown propagation for IME
+            input.removeEventListener("keydown", input.keydownHandler);
+          }
+        );
+
+        // Try to attach keyboard to the input
+        try {
+          google.elements.keyboard.setInputMethod("zh-CN");
+        } catch (e) {}
+      });
+
+      // Store keydown handler reference for IME toggle
+      input._keydownHandler = input.keydownHandler;
+
+      // ====== Sample list ======
+      function buildSampleList() {
+        const samples = [
+          ["VS", "zhong", "中"],
+          ["GO", "guo", "国"],
+          ["RF", "ren", "人"],
+          ["UH", "shang", "上"],
+          ["IC", "chiao", "超"],
+          ["ZV", "zei", "贼"],
+          ["XM", "xian", "现"],
+          ["CJ", "can", "参"],
+          ["BK", "bao", "报"],
+          ["NL", "nai", "奶"],
+          ["M;", "ming", "名"],
+          ["YT", "yue", "月"],
+          ["WQ", "wiu", "??"],
+          ["PR", "pun", "??"],
+          ["DJ", "dan", "单"],
+          ["FH", "fang", "方"],
+          ["GG", "geng", "更"],
+          ["HP", "hun", "混"],
+          ["JB", "jou", "就"],
+          ["KZ", "kei", "给"],
+          ["LV", "lui", "?对?"],
+        ];
+        const list = document.getElementById("sampleList");
+        list.innerHTML = samples
+          .map(
+            ([keys, py, ch]) =>
+              `<div><code>${keys}</code> → ${py} ${ch !== "??" ? "· " + ch : ""}</div>`
+          )
+          .join("");
+      }
+      buildSampleList();
+    </script>
+  </body>
+</html>
