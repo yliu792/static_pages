@@ -335,142 +335,17 @@
       </div>
     </main>
 
+    <script src="shuangpin-mapping.js"></script>
+
     <!-- Google Input Tools -->
     <script src="https://www.gstatic.com/inputtools/js/"></script>
     <script>
       // ====== Double Pinyin Mappings ======
-
-      // Initials (first keystroke)
-      const initials = {};
-      // Regular consonants map to themselves
-      "bpmfdtnlgkhjqxrzcsyw".split("").forEach(c => (initials[c] = c));
-      // Special initials
-      initials["v"] = "zh";
-      initials["i"] = "ch";
-      initials["u"] = "sh";
-      // Zero-initial pseudo-initials (contribute no consonant sound)
-      initials["o"] = "";
-
-      // Finals (second keystroke) — some depend on initial context
-      function getFinal(key, initial) {
-        // Returns possible finals; first is default
-        const table = {
-          q: ["iu"],
-          w: ["ua", "ia"],
-          e: ["e"],
-          r: ["uan", "er"],
-          t: ["ue", "ve"],
-          y: ["uai", "v"],
-          o: ["uo", "o"],
-          p: ["un"],
-          a: ["a"],
-          s: ["ong", "iong"],
-          d: ["uang", "iang"],
-          f: ["en"],
-          g: ["eng"],
-          h: ["ang"],
-          j: ["an"],
-          k: ["ao"],
-          l: ["ai"],
-          ";": ["ing"],
-          z: ["ei"],
-          x: ["ie"],
-          c: ["iao"],
-          v: ["ui"],
-          b: ["ou"],
-          n: ["in"],
-          m: ["ian"],
-          u: ["u"],
-          i: ["i"],
-        };
-        const options = table[key] || [key];
-
-        // Pick the correct variant based on initial
-        if (options.length === 1) return options[0];
-
-        // Context-dependent final selection
-        const first = options[0];
-        const second = options[1] || first;
-
-        switch (key) {
-          case "w":
-            // ia after j/q/x; ua otherwise
-            return initial && "jqx".includes(initial[0]) ? second : first;
-          case "r":
-            // er after zero-initial; uan otherwise
-            return initial === "" ? second : first;
-          case "t":
-            // üe after n/l; ue otherwise
-            return initial && "nl".includes(initial[0]) ? second : first;
-          case "y":
-            // ü after j/q/x/y/n/l; uai otherwise
-            return initial && "jqxynl".includes(initial[0]) ? second : first;
-          case "o":
-            // o after zero-initial or w; uo otherwise
-            return initial === "" || initial === "w" ? second : first;
-          case "s":
-            // iong after j/q/x; ong otherwise
-            return initial && "jqx".includes(initial[0]) ? second : first;
-          case "d":
-            // iang after j/q/x; uang otherwise
-            return initial && "jqx".includes(initial[0]) ? second : first;
-          default:
-            return first;
-        }
-      }
-
-      function convertPair(k1, k2) {
-        const init = initials[k1] !== undefined ? initials[k1] : k1;
-        const fin = getFinal(k2, init);
-        return renderPinyin(init, fin);
-      }
-
-      function renderPinyin(initial, final) {
-        if (initial === "") return final;
-
-        if (final === "v") {
-          if ("jqxy".includes(initial[0])) return initial + "u";
-          return initial + "v";
-        }
-
-        if (final === "ve") {
-          if ("jqxy".includes(initial[0])) return initial + "ue";
-          return initial + "ve";
-        }
-
-        if (initial === "y") {
-          const yFinals = {
-            i: "yi",
-            in: "yin",
-            ing: "ying",
-            ia: "ya",
-            ian: "yan",
-            iang: "yang",
-            iao: "yao",
-            ie: "ye",
-            iong: "yong",
-            iu: "you",
-            u: "yu",
-          };
-          return yFinals[final] || initial + final;
-        }
-
-        if (initial === "w") {
-          const wFinals = {
-            u: "wu",
-            ua: "wa",
-            uai: "wai",
-            uan: "wan",
-            uang: "wang",
-            ui: "wei",
-            un: "wen",
-            uo: "wo",
-          };
-          return wFinals[final] || initial + final;
-        }
-
-        return initial + final;
-      }
+      const {
+        INITIALS: initials,
+        displayFinal,
+        resolvePair,
+      } = window.ShuangpinMapping;
 
       // ====== Google Input Tools Character Lookup ======
       async function lookupChars(pinyin) {
@@ -545,47 +420,26 @@
           .join("");
       }
 
-      function getInitialDisplay(k) {
-        const map = { v: "zh", i: "ch", u: "sh", o: "零" };
-        return map[k] || k;
-      }
-
-      function displayFinal(final) {
-        return final.replace(/ve/g, "üe").replace(/v/g, "ü");
-      }
-
-      function isValidSyllable(initial, final, pinyin) {
-        if (initial === "") {
-          return ["a", "ai", "an", "ang", "ao", "e", "ei", "en", "eng", "er", "o", "ou"].includes(pinyin);
-        }
-
-        if (final === "ui") {
-          return ["d", "t", "g", "k", "h", "z", "c", "s", "r", "zh", "ch", "sh", "w"].includes(initial);
-        }
-
-        if (final === "v" || final === "ve") {
-          return ["n", "l", "j", "q", "x", "y"].includes(initial);
-        }
-
-        return true;
-      }
-
       async function showResult(k1, k2) {
-        const pinyin = convertPair(k1, k2);
-        const init = initials[k1] !== undefined ? initials[k1] : k1;
-        const fin = getFinal(k2, init);
-        const initLabel = init === "" ? "零声母" : init;
-        const keySeq = `<span class="pinyin-out">${k1}${k2}</span> → <span class="pinyin-out">${pinyin}</span>`;
-        const detail = `<span style="color:#94a3b8;font-size:0.8rem;">(声: ${initLabel} 韵: ${displayFinal(fin)})</span>`;
+        const result = resolvePair(k1, k2);
+        const initLabel = result.initial === "" ? "零声母" : result.initial;
+        const keySeq = `<span class="pinyin-out">${k1}${k2}</span> → <span class="pinyin-out">${result.pinyin}</span>`;
+        const detail = `<span style="color:#94a3b8;font-size:0.8rem;">(声: ${initLabel} 韵: ${displayFinal(result.final)})</span>`;
 
-        if (!isValidSyllable(init, fin, pinyin)) {
+        if (result.status === "invalid") {
           resultEl.innerHTML = `<span class="pinyin-out">${k1}${k2}</span> ${detail} <span class="arrow">→</span> <span class="hint">这不是有效的微软双拼音节。女/绿请试 NY/LY，虐/略请试 NT/LT。</span>`;
+          return;
+        }
+
+        if (result.status === "ambiguous") {
+          const options = result.candidates.map((candidate) => candidate.pinyin).join(" / ");
+          resultEl.innerHTML = `<span class="pinyin-out">${k1}${k2}</span> ${detail} <span class="arrow">→</span> <span class="error-msg">这个组合筛出了多个合法音节：${escapeHtml(options)}</span>`;
           return;
         }
 
         resultEl.innerHTML = `${keySeq} ${detail} <span class="arrow">→</span> <span class="loading">查找汉字…</span>`;
 
-        const chars = await lookupChars(pinyin);
+        const chars = await lookupChars(result.pinyin);
         if (chars === null) {
           resultEl.innerHTML = `${keySeq} ${detail} <span class="arrow">→</span> <span class="error-msg">Google Input Tools 请求失败（可能是网络原因）</span>`;
         } else if (chars.length === 0) {
