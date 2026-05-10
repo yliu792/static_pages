@@ -207,6 +207,37 @@
         color: #ef4444;
         font-size: 0.8rem;
       }
+      .preview-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        width: 100%;
+      }
+      .preview-row {
+        display: grid;
+        grid-template-columns: minmax(5.5rem, auto) 1fr;
+        align-items: start;
+        gap: 0.6rem;
+      }
+      .preview-main {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+      }
+      .preview-detail {
+        color: #94a3b8;
+        font-size: 0.78rem;
+      }
+      .preview-status {
+        min-width: 0;
+      }
+      @media (max-width: 560px) {
+        .preview-row {
+          grid-template-columns: 1fr;
+          gap: 0.35rem;
+        }
+      }
 
       .buffer {
         display: flex;
@@ -309,7 +340,7 @@
             <input
               type="text"
               id="spInput"
-              placeholder="在键盘上打字试试，比如 vs=中, go=国, rf=人..."
+              placeholder="连续打双拼试试，比如 vsgorf = 中国人..."
               autocomplete="off"
               autocorrect="off"
               autocapitalize="off"
@@ -398,7 +429,9 @@
       const bufferEl = document.getElementById("buffer");
       const resultEl = document.getElementById("result");
       const googleBtn = document.getElementById("googleBtn");
-      let keystrokeBuffer = []; // up to 2 keys
+      let keystrokeBuffer = []; // Current incomplete pair
+      let syllables = [];
+      let previewVersion = 0;
 
       function highlightKey(key) {
         const el = document.querySelector(`.key[data-key="${key}"]`);
@@ -408,51 +441,124 @@
       }
 
       function updateBuffer() {
-        if (keystrokeBuffer.length === 0) {
+        if (keystrokeBuffer.length === 0 && syllables.length === 0) {
           bufferEl.innerHTML = "";
           return;
         }
-        bufferEl.innerHTML = keystrokeBuffer
+        const completed = syllables
+          .map((syllable) => `<span class="buf-char">${escapeHtml(syllable.keys)}</span>`)
+          .join("");
+        const pending = keystrokeBuffer
           .map((k, i) => {
             const cls = i === keystrokeBuffer.length - 1 ? "buf-char active" : "buf-char";
-            return `<span class="${cls}">${k}</span>`;
+            return `<span class="${cls}">${escapeHtml(k)}</span>`;
           })
           .join("");
+        bufferEl.innerHTML = completed + pending;
       }
 
-      async function showResult(k1, k2) {
+      function renderSyllableStatus(syllable) {
+        if (syllable.result.status === "invalid") {
+          return `<span class="hint">这不是有效的微软双拼音节。女/绿请试 NY/LY，虐/略请试 NT/LT。</span>`;
+        }
+
+        if (syllable.result.status === "ambiguous") {
+          const options = syllable.result.candidates.map((candidate) => candidate.pinyin).join(" / ");
+          return `<span class="error-msg">这个组合筛出了多个合法音节：${escapeHtml(options)}</span>`;
+        }
+
+        if (syllable.status === "loading") {
+          return `<span class="loading">查找汉字…</span>`;
+        }
+
+        if (syllable.status === "error") {
+          return `<span class="error-msg">Google Input Tools 请求失败（可能是网络原因）</span>`;
+        }
+
+        if (!syllable.chars || syllable.chars.length === 0) {
+          return `<span class="hint">没有找到对应汉字，可能不是有效音节</span>`;
+        }
+
+        return `<div class="chars">${syllable.chars
+          .map((c) => `<span data-char="${escapeHtml(c)}" title="点击复制">${escapeHtml(c)}</span>`)
+          .join("")}</div>`;
+      }
+
+      function renderPreview() {
+        if (syllables.length === 0 && keystrokeBuffer.length === 0) {
+          resultEl.innerHTML = `<span class="hint">在上面输入双拼按键，这里会显示对应的拼音和候选汉字。</span>`;
+          return;
+        }
+
+        const rows = syllables
+          .map((syllable) => {
+            const { result } = syllable;
+            const initLabel = result.initial === "" ? "零声母" : result.initial;
+            const pinyinPart =
+              result.status === "valid"
+                ? `<span class="arrow">→</span><span class="pinyin-out">${escapeHtml(result.pinyin)}</span>`
+                : "";
+            return `<div class="preview-row">
+              <div class="preview-main">
+                <span class="pinyin-out">${escapeHtml(syllable.keys)}</span>
+                ${pinyinPart}
+                <span class="preview-detail">(声: ${escapeHtml(initLabel)} 韵: ${escapeHtml(displayFinal(result.final))})</span>
+              </div>
+              <div class="preview-status">${renderSyllableStatus(syllable)}</div>
+            </div>`;
+          })
+          .join("");
+
+        const pending =
+          keystrokeBuffer.length > 0
+            ? `<div class="preview-row">
+                <div class="preview-main"><span class="pinyin-out">${escapeHtml(keystrokeBuffer.join(""))}</span></div>
+                <div class="preview-status"><span class="hint">等待第二键…</span></div>
+              </div>`
+            : "";
+
+        resultEl.innerHTML = `<div class="preview-list">${rows}${pending}</div>`;
+      }
+
+      function addSyllable(k1, k2) {
         const result = resolvePair(k1, k2);
-        const initLabel = result.initial === "" ? "零声母" : result.initial;
-        const keySeq = `<span class="pinyin-out">${k1}${k2}</span> → <span class="pinyin-out">${result.pinyin}</span>`;
-        const detail = `<span style="color:#94a3b8;font-size:0.8rem;">(声: ${initLabel} 韵: ${displayFinal(result.final)})</span>`;
+        const syllable = {
+          id: previewVersion++,
+          keys: k1 + k2,
+          result,
+          status: result.status === "valid" ? "loading" : result.status,
+          chars: [],
+        };
+        syllables.push(syllable);
+        renderPreview();
 
-        if (result.status === "invalid") {
-          resultEl.innerHTML = `<span class="pinyin-out">${k1}${k2}</span> ${detail} <span class="arrow">→</span> <span class="hint">这不是有效的微软双拼音节。女/绿请试 NY/LY，虐/略请试 NT/LT。</span>`;
-          return;
+        if (result.status === "valid") {
+          lookupChars(result.pinyin).then((chars) => {
+            const current = syllables.find((item) => item.id === syllable.id);
+            if (!current) return;
+            if (chars === null) {
+              current.status = "error";
+            } else {
+              current.status = "done";
+              current.chars = chars;
+            }
+            renderPreview();
+          });
         }
+      }
 
-        if (result.status === "ambiguous") {
-          const options = result.candidates.map((candidate) => candidate.pinyin).join(" / ");
-          resultEl.innerHTML = `<span class="pinyin-out">${k1}${k2}</span> ${detail} <span class="arrow">→</span> <span class="error-msg">这个组合筛出了多个合法音节：${escapeHtml(options)}</span>`;
-          return;
+      function removeLastKeystroke() {
+        if (keystrokeBuffer.length > 0) {
+          keystrokeBuffer.pop();
+        } else if (syllables.length > 0) {
+          const last = syllables.pop();
+          if (last && last.keys.length === 2) {
+            keystrokeBuffer = [last.keys[0]];
+          }
         }
-
-        resultEl.innerHTML = `${keySeq} ${detail} <span class="arrow">→</span> <span class="loading">查找汉字…</span>`;
-
-        const chars = await lookupChars(result.pinyin);
-        if (chars === null) {
-          resultEl.innerHTML = `${keySeq} ${detail} <span class="arrow">→</span> <span class="error-msg">Google Input Tools 请求失败（可能是网络原因）</span>`;
-        } else if (chars.length === 0) {
-          resultEl.innerHTML = `${keySeq} ${detail} <span class="arrow">→</span> <span class="hint">没有找到对应汉字，可能不是有效音节</span>`;
-        } else {
-          const charSpans = chars
-            .map(
-              (c) =>
-                `<span data-char="${escapeHtml(c)}" title="点击复制">${escapeHtml(c)}</span>`
-            )
-            .join("");
-          resultEl.innerHTML = `${keySeq} ${detail} <span class="arrow">→</span> <div class="chars">${charSpans}</div>`;
-        }
+        input.value = syllables.map((syllable) => syllable.keys).join("") + keystrokeBuffer.join("");
+        updateBuffer();
+        renderPreview();
       }
 
       resultEl.addEventListener("click", (e) => {
@@ -465,7 +571,23 @@
 
       input.addEventListener("keydown", (e) => {
         // Allow IME composition to pass through
-        if (e.isComposing || e.keyCode === 229) return;
+        if (googleIMEActive || e.isComposing || e.keyCode === 229) return;
+
+        if (e.key === "Backspace") {
+          e.preventDefault();
+          removeLastKeystroke();
+          return;
+        }
+
+        if (e.key === "Escape") {
+          e.preventDefault();
+          syllables = [];
+          keystrokeBuffer = [];
+          input.value = "";
+          updateBuffer();
+          renderPreview();
+          return;
+        }
 
         const key = e.key.toLowerCase();
         // Only process letter keys and semicolon
@@ -483,22 +605,16 @@
           }
           keystrokeBuffer = [key];
           updateBuffer();
-          // Update input value to show what user typed
-          input.value = key;
+          renderPreview();
+          input.value = syllables.map((syllable) => syllable.keys).join("") + key;
         } else {
           // Second keystroke
           const k1 = keystrokeBuffer[0];
           const k2 = key;
-          keystrokeBuffer = [k1, k2];
+          keystrokeBuffer = [];
+          addSyllable(k1, k2);
           updateBuffer();
-          input.value = k1 + k2;
-          showResult(k1, k2);
-          // Auto-clear buffer after showing result
-          setTimeout(() => {
-            keystrokeBuffer = [];
-            input.value = "";
-            updateBuffer();
-          }, 800);
+          input.value = syllables.map((syllable) => syllable.keys).join("");
         }
       });
 
@@ -506,8 +622,10 @@
       input.addEventListener("input", (e) => {
         // If input was cleared externally or by IME, reset buffer
         if (input.value === "") {
+          syllables = [];
           keystrokeBuffer = [];
           updateBuffer();
+          renderPreview();
         }
       });
 
@@ -527,7 +645,7 @@
               googleIME.deactivate();
             } catch (e) {}
           }
-          input.placeholder = "在键盘上打字试试，比如 vs=中, go=国, rf=人...";
+          input.placeholder = "连续打双拼试试，比如 vsgorf = 中国人...";
           return;
         }
 
