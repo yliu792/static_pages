@@ -405,8 +405,8 @@
             // v after j/q/x/y; uai otherwise
             return initial && "jqxy".includes(initial[0]) ? second : first;
           case "o":
-            // o after zero-initial; uo otherwise
-            return initial === "" ? second : first;
+            // o after zero-initial or w; uo otherwise
+            return initial === "" || initial === "w" ? second : first;
           case "s":
             // iong after j/q/x; ong otherwise
             return initial && "jqx".includes(initial[0]) ? second : first;
@@ -645,6 +645,7 @@
         const samples = [
           ["VS", "zhong", "中"],
           ["GO", "guo", "国"],
+          ["WO", "wo", "我"],
           ["RF", "ren", "人"],
           ["UH", "shang", "上"],
           ["IC", "chiao", "超"],
