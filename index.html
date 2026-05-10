@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>我的第一个 GitHub Pages Demo</title>
+    <style>
+      :root {
+        --bg1: #f6efe5;
+        --bg2: #d7e7f4;
+        --text: #1f2937;
+        --card: #ffffff;
+        --accent: #0f766e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
+        color: var(--text);
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(circle at 10% 20%, var(--bg1), transparent 45%),
+          radial-gradient(circle at 90% 80%, var(--bg2), transparent 45%),
+          #f8fafc;
+      }
+
+      .card {
+        width: min(92vw, 680px);
+        background: var(--card);
+        border-radius: 24px;
+        padding: 2rem;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+      }
+
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: clamp(1.6rem, 3vw, 2.2rem);
+      }
+
+      p {
+        margin: 0.3rem 0;
+        line-height: 1.7;
+      }
+
+      .row {
+        margin-top: 1.4rem;
+        display: flex;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+      }
+
+      button {
+        border: none;
+        border-radius: 999px;
+        padding: 0.7rem 1.1rem;
+        background: var(--accent);
+        color: white;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+
+      .ghost {
+        background: #e8f7f5;
+        color: #115e59;
+      }
+
+      #msg {
+        margin-top: 1rem;
+        font-weight: 600;
+        color: #0f766e;
+        min-height: 1.5em;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1>你好，GitHub Pages</h1>
+      <p>这是你的第一个 demo 页面。</p>
+      <p>你已经成功迈出第一步了。</p>
+
+      <div class="row">
+        <button id="helloBtn">点我打招呼</button>
+        <button id="timeBtn" class="ghost">显示当前时间</button>
+      </div>
+
+      <div id="msg"></div>
+    </main>
+
+    <script>
+      const msg = document.getElementById("msg");
+      const helloBtn = document.getElementById("helloBtn");
+      const timeBtn = document.getElementById("timeBtn");
+
+      helloBtn.addEventListener("click", () => {
+        msg.textContent = "欢迎来到你的网站！";
+      });
+
+      timeBtn.addEventListener("click", () => {
+        const now = new Date();
+        msg.textContent = `现在时间：${now.toLocaleString("zh-CN")}`;
+      });
+    </script>
+  </body>
+</html>
